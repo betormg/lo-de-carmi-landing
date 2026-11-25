@@ -1,0 +1,4 @@
+_estilos-design-md/
+.vercel/
+.env*
+.claude/settings.local.json
