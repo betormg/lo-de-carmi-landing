@@ -1181,7 +1181,7 @@ function fetchCSV(url, ms = 7000) {
 }
 
 // Menú desde Supabase. Devuelve filas con el mismo formato que usaba el Sheets:
-// [nombre, descripción, precio, guarniciones separadas por " / ", imagen].
+// [nombre, descripción, precio, guarniciones del plato separadas por " / ", imagen].
 // Devuelve null si hoy no hay platos con stock cargado (en ese caso se usa el Sheets).
 // Los platos agotados (disponible = 0) no se muestran.
 function fetchMenuSupabase(ms = 7000) {
@@ -1198,10 +1198,14 @@ function fetchMenuSupabase(ms = 7000) {
       if (!Array.isArray(items)) throw new Error("Respuesta inesperada");
       const platos = items.filter(i => i.kind === "plato");
       if (!platos.length) return null;
-      const guarn = items.filter(i => i.kind === "guarnicion").map(i => i.name).join(" / ");
+      // Cada plato trae SUS guarniciones (se asignan en la caja, pantalla Menú). Sin asignar = sin selector.
+      // Si la guarnición tiene recargo, se muestra al lado del nombre: "Arroz (+Gs. 3.000)".
+      const guarnDe = i => (Array.isArray(i.guarniciones) ? i.guarniciones : [])
+        .map(g => g.price > 0 ? `${g.name} (+Gs. ${fmtGs(g.price)})` : g.name)
+        .join(" / ");
       return platos
         .filter(i => i.disponible > 0)
-        .map(i => [i.name, i.description || "", String(i.price ?? ""), guarn, i.image_url || ""]);
+        .map(i => [i.name, i.description || "", String(i.price ?? ""), guarnDe(i), i.image_url || ""]);
     })
     .finally(() => clearTimeout(timer));
 }
